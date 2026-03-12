@@ -21,8 +21,7 @@ const Progress = React.forwardRef<
         initial={{ x: '-100%' }}
         animate={{ x: `-${100 - (value || 0)}%` }}
         transition={springSmooth}
-        // Exact Linear Brand Color (Brand 500)
-        style={{ backgroundColor: '#9E77ED' }}
+        style={{ backgroundColor: 'var(--progress-color, #9E77ED)' }}
       />
     </ProgressPrimitive.Indicator>
   </ProgressPrimitive.Root>
