@@ -1,0 +1,44 @@
+{
+  "preset": "ts-jest/presets/default-esm",
+  "extensionsToTreatAsEsm": [".ts", ".tsx"],
+  "testEnvironment": "<rootDir>/jest.environment.cjs",
+  "testEnvironmentOptions": {
+    "customExportConditions": ["node", "node-addons"]
+  },
+  "setupFilesAfterSetup": ["<rootDir>/src/setupTests.ts"],
+  "roots": ["<rootDir>/src"],
+  "testMatch": ["**/__tests__/**/*.{ts,tsx}", "**/*.(test|spec).{ts,tsx}"],
+  "transform": {
+    "^.+\\.(ts|tsx)$": [
+      "ts-jest",
+      {
+        "useESM": true,
+        "tsconfig": "tsconfig.jest.json"
+      }
+    ],
+    "^.+\\.(js|jsx)$": ["babel-jest"]
+  },
+  "collectCoverageFrom": [
+    "src/**/*.{js,jsx,ts,tsx}",
+    "!src/**/*.d.ts",
+    "!src/index.tsx",
+    "!src/main.tsx"
+  ],
+  "moduleNameMapper": {
+    "^@/(.+\\.svg)$": "<rootDir>/src/__mocks__/fileMock.js",
+    "^@/(.+\\.png)$": "<rootDir>/src/__mocks__/fileMock.js",
+    "^@/(.*)$": "<rootDir>/src/$1",
+    "\\.(svg|png|jpg|jpeg|gif|webp)$": "<rootDir>/src/__mocks__/fileMock.js"
+  },
+  "transformIgnorePatterns": [
+    "node_modules/(?!(lucide-react|@radix-ui|msw|@mswjs|until-async|rettime)/)"
+  ],
+  "coverageThreshold": {
+    "global": {
+      "branches": 3,
+      "functions": 5,
+      "lines": 7,
+      "statements": 7
+    }
+  }
+}
