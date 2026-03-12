@@ -18,7 +18,9 @@ import Page404 from '@/pages/Page404';
 const Login = lazyPage(() => import('@/pages/Auth/Login'));
 
 // Dashboard pages
-const Home = lazyPage(() => import('@/pages/Home'));
+const Overview = lazyPage(() => import('@/pages/Overview'));
+const Stores = lazyPage(() => import('@/pages/Stores'));
+const SystemHealth = lazyPage(() => import('@/pages/SystemHealth'));
 
 export const authRoutes = [
   { path: 'login', element: Login },
@@ -26,7 +28,10 @@ export const authRoutes = [
 ];
 
 export const inAppRoutes = [
-  { path: '/', element: <Navigate to="/home" /> },
-  { path: 'home', element: Home },
+  { path: '/', element: <Navigate to="/overview" /> },
+  { path: 'overview', element: Overview },
+  { path: 'stores', element: Stores },
+  { path: 'system', element: SystemHealth },
+  { path: 'home', element: <Navigate to="/overview" /> },
   { path: '*', element: <Page404 /> },
 ];
