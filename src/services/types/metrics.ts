@@ -106,12 +106,39 @@ export interface ReconciliationByStore {
   below_threshold: boolean;
 }
 
+export interface BusinessGrowthMetrics {
+  stores_current: number;
+  stores_target: number;
+  target_deadline_days: number;
+  new_stores_7d: number;
+  new_stores_change: number;
+  pipeline_count: number;
+  live_count: number;
+  rs_revenue_7d: number;
+  rs_revenue_change_pct: number;
+  mrr_estimate: number;
+  retention_4wk: number;
+  churn_risk_count: number;
+  sticky_4wk_plus: number;
+}
+
+export interface RetentionMetrics {
+  active_stores_7d: number;
+  total_stores: number;
+  avg_time_to_operational_days: number;
+  prev_cohort_days: number;
+  churn_risk_stores: number;
+  churn_risk_reason: string;
+}
+
 export interface OverviewMetrics {
   north_star: NorthStarMetric;
   economic: EconomicMetrics;
   depth: DepthMetrics;
   trust: TrustMetrics;
   trends: TrendDataPoint[];
+  business_growth: BusinessGrowthMetrics;
+  retention: RetentionMetrics;
 }
 
 export interface SystemHealthData {

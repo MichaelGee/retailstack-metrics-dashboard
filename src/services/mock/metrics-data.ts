@@ -270,6 +270,29 @@ export function getMockOverviewMetrics(period: PeriodFilter): OverviewMetrics {
       last_updated: new Date().toISOString(),
     },
     trends: generateTrendData(),
+    business_growth: {
+      stores_current: 8,
+      stores_target: 30,
+      target_deadline_days: 48,
+      new_stores_7d: 2,
+      new_stores_change: 2,
+      pipeline_count: 4,
+      live_count: 8,
+      rs_revenue_7d: 145_000,
+      rs_revenue_change_pct: 12,
+      mrr_estimate: 580_000,
+      retention_4wk: 75,
+      churn_risk_count: 2,
+      sticky_4wk_plus: 6,
+    },
+    retention: {
+      active_stores_7d: 8,
+      total_stores: 8,
+      avg_time_to_operational_days: 11,
+      prev_cohort_days: 14,
+      churn_risk_stores: 2,
+      churn_risk_reason: 'Below recon threshold 2+ weeks',
+    },
   };
 }
 
