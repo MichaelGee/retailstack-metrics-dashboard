@@ -12,18 +12,29 @@ import { NorthStarCard } from './components/NorthStarCard';
 import { MetricCard } from './components/MetricCard';
 import { TrustGauge } from './components/TrustGauge';
 import { TrendChart } from './components/TrendChart';
+import { BusinessGrowthBanner } from './components/BusinessGrowthBanner';
+import { RetentionSignalSection } from './components/RetentionSignalSection';
+import { Card, CardContent } from '@/components/ui/card';
+import { InfoTooltip } from '@/components/ui/info-tooltip';
 import { getMockOverviewMetrics } from '@/services/mock/metrics-data';
 import type { PeriodFilter } from '@/services/types/metrics';
 
 function formatNaira(value: number): string {
-  if (value >= 1_000_000) return `₦${(value / 1_000_000).toFixed(1)}M`;
-  if (value >= 1_000) return `₦${(value / 1_000).toFixed(0)}K`;
-  return `₦${value}`;
+  if (value >= 1_000_000) return `\u20A6${(value / 1_000_000).toFixed(1)}M`;
+  if (value >= 1_000) return `\u20A6${(value / 1_000).toFixed(0)}K`;
+  return `\u20A6${value}`;
 }
+
+const storesWithDecisions = ['Ikeja', 'Surulere', 'Yaba'];
+const storesWithoutDecisions = ['Lekki', 'VI', 'Apapa', 'Ajah', 'Festac'];
 
 const Overview = () => {
   const [period, setPeriod] = useState<PeriodFilter>('7d');
   const data = getMockOverviewMetrics(period);
+
+  const inventoryTarget = 80;
+  const inventoryValue = data.depth.inventory_events_per_1m_gmv;
+  const inventoryPct = Math.min((inventoryValue / inventoryTarget) * 100, 100);
 
   return (
     <>
@@ -51,6 +62,9 @@ const Overview = () => {
             </SelectContent>
           </Select>
         </div>
+
+        {/* Business Growth Banner — top of page */}
+        <BusinessGrowthBanner metrics={data.business_growth} />
 
         {/* North Star — full width hero */}
         <NorthStarCard data={data.north_star} />
@@ -85,6 +99,9 @@ const Overview = () => {
           </div>
         </div>
 
+        {/* Retention Signal — between Economic and Depth */}
+        <RetentionSignalSection metrics={data.retention} />
+
         {/* Depth */}
         <div>
           <div className="mb-3">
@@ -97,21 +114,98 @@ const Overview = () => {
             </p>
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <MetricCard
-              label="Inventory Events per ₦1M GMV"
-              value={String(data.depth.inventory_events_per_1m_gmv)}
-              trend={data.depth.inventory_events_trend}
-              subtitle={`${data.depth.total_inventory_events} total events`}
-              icon={Package}
-              tooltip="Stock-in, stock-out, adjustments, and transfers normalized per ₦1M in sales. A rising number means stores trust the inventory layer. Flat while GMV grows is a depth problem."
-            />
-            <MetricCard
-              label="Weekly Stores with Decisions"
-              value={`${data.depth.weekly_stores_with_decisions} / ${data.depth.total_stores}`}
-              subtitle={`${data.depth.decision_rate}% of stores took action`}
-              icon={ClipboardCheck}
-              tooltip="Stores that performed at least one price change, stock adjustment, inventory count, or purchase order in the last 7 days. The strongest signal that owners are actively running their business through Retail Stack."
-            />
+            {/* Inventory Events per 1M GMV — with progress bar */}
+            <Card className="transition-shadow duration-200 hover:shadow-md">
+              <CardContent className="p-5">
+                <div className="flex flex-col gap-3">
+                  {/* Header */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-medium text-text-tertiary">
+                        Inventory Events per {'\u20A6'}1M GMV
+                      </span>
+                      <InfoTooltip content="Stock-in, stock-out, adjustments, and transfers normalized per \u20A61M in sales. A rising number means stores trust the inventory layer. Flat while GMV grows is a depth problem." />
+                    </div>
+                    <Package className="size-4 text-text-quaternary" />
+                  </div>
+
+                  {/* Value */}
+                  <span className="text-2xl font-bold tracking-tight text-text-primary">
+                    {inventoryValue}
+                  </span>
+
+                  {/* Trend + subtitle */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-text-tertiary">
+                      {data.depth.total_inventory_events} total events
+                    </span>
+                  </div>
+
+                  {/* Progress bar */}
+                  <div className="flex flex-col gap-1">
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-bg-secondary">
+                      <div
+                        className="h-full rounded-full bg-brand-500 transition-all duration-300"
+                        style={{ width: `${inventoryPct}%` }}
+                      />
+                    </div>
+                    <div className="flex items-center justify-end">
+                      <span className="text-xs text-text-quaternary">
+                        Target: {inventoryTarget}+
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Weekly Stores with Decisions — with store badges */}
+            <Card className="transition-shadow duration-200 hover:shadow-md">
+              <CardContent className="p-5">
+                <div className="flex flex-col gap-3">
+                  {/* Header */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-medium text-text-tertiary">
+                        Weekly Stores with Decisions
+                      </span>
+                      <InfoTooltip content="Stores that performed at least one price change, stock adjustment, inventory count, or purchase order in the last 7 days. The strongest signal that owners are actively running their business through Retail Stack." />
+                    </div>
+                    <ClipboardCheck className="size-4 text-text-quaternary" />
+                  </div>
+
+                  {/* Value */}
+                  <span className="text-2xl font-bold tracking-tight text-text-primary">
+                    {data.depth.weekly_stores_with_decisions} / {data.depth.total_stores}
+                  </span>
+
+                  {/* Subtitle */}
+                  <span className="text-xs text-text-tertiary">
+                    {data.depth.decision_rate}% of stores took action
+                  </span>
+
+                  {/* Store badges */}
+                  <div className="flex flex-wrap gap-1.5">
+                    {storesWithDecisions.map(name => (
+                      <span
+                        key={name}
+                        className="rounded-full bg-brand-100 px-2.5 py-0.5 text-xs font-medium text-brand-700"
+                      >
+                        {name}
+                      </span>
+                    ))}
+                    {storesWithoutDecisions.map(name => (
+                      <span
+                        key={name}
+                        className="rounded-full bg-bg-secondary px-2.5 py-0.5 text-xs font-medium text-text-quaternary"
+                      >
+                        {name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
 
@@ -144,7 +238,7 @@ const Overview = () => {
               rate={data.trust.sync_reliability_rate}
               threshold={data.trust.sync_threshold}
               detail={`${data.trust.successfully_synced.toLocaleString()} of ${data.trust.total_events_attempted.toLocaleString()} events synced`}
-              secondaryDetail={`${data.trust.resolved_via_retry} retried · ${data.trust.unrecoverable_conflicts} unrecoverable`}
+              secondaryDetail={`${data.trust.resolved_via_retry} retried \u00B7 ${data.trust.unrecoverable_conflicts} unrecoverable`}
               lastUpdated={data.trust.last_updated}
               tooltip="Percentage of transactions and inventory events synced without data loss. Below 99% triggers a warning. Below 98% is a production incident. Refreshes every 15 minutes."
             />

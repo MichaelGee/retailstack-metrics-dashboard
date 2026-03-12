@@ -1,14 +1,6 @@
 import { useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { InfoTooltip } from '@/components/ui/info-tooltip';
-import {
-  Store,
-  ShieldCheck,
-  AlertTriangle,
-  Banknote,
-  ArrowRightLeft,
-  ClipboardCheck,
-} from 'lucide-react';
 import { mockStores } from '@/services/mock/metrics-data';
 
 function formatCurrency(value: number): string {
@@ -21,10 +13,8 @@ interface SummaryCard {
   label: string;
   value: string;
   detail: string;
-  icon: React.ElementType;
-  iconColor: string;
-  iconBg: string;
   tooltip: string;
+  valueColor?: string;
 }
 
 export function StoreSummaryCards() {
@@ -37,101 +27,83 @@ export function StoreSummaryCards() {
       mockStores.reduce((sum, s) => sum + s.reconciliation_rate, 0) / total
     );
     const storesWithDecisions = mockStores.filter(s => s.decision_actions_count > 0).length;
+    const churnRisk = mockStores.filter(s => s.reconciliation_rate < 85).length;
 
     return [
       {
-        label: 'Total Stores',
+        label: 'Total',
         value: `${total}`,
-        detail: `Across all locations`,
-        icon: Store,
-        iconColor: 'text-brand-600',
-        iconBg: 'bg-bg-brand-secondary',
+        detail: 'All locations',
         tooltip: 'Total number of stores connected to the RetailStack platform.',
       },
       {
-        label: 'Fully Operational',
+        label: 'Operational',
         value: `${healthy}/${total}`,
         detail: `${Math.round((healthy / total) * 100)}% of stores`,
-        icon: ShieldCheck,
-        iconColor: 'text-success-600',
-        iconBg: 'bg-success-50',
         tooltip:
           'Stores meeting all 4 criteria in the last 7 days: processed sales, recorded inventory, closed trading days, and zero critical failures.',
       },
       {
-        label: 'Needs Attention',
+        label: 'Attention',
         value: `${attention}`,
-        detail:
-          attention === 0
-            ? 'All stores healthy'
-            : `${attention} store${attention > 1 ? 's' : ''} failing criteria`,
-        icon: AlertTriangle,
-        iconColor: attention > 0 ? 'text-warning-600' : 'text-success-600',
-        iconBg: attention > 0 ? 'bg-warning-50' : 'bg-success-50',
+        detail: 'Failing criteria',
         tooltip:
           'Stores that are missing at least one operational criteria. These need investigation.',
       },
       {
-        label: 'Combined GMV',
+        label: 'GMV',
         value: formatCurrency(totalGmv),
         detail: `Avg ${formatCurrency(Math.round(totalGmv / total))}/store`,
-        icon: Banknote,
-        iconColor: 'text-green-600',
-        iconBg: 'bg-green-50',
         tooltip:
           'Total Gross Merchandise Value processed across all stores in the rolling 7-day window.',
       },
       {
-        label: 'Avg Reconciliation',
+        label: 'Avg Recon',
         value: `${avgReconciliation}%`,
-        detail: `${mockStores.filter(s => s.reconciliation_rate < 85).length} below 85% threshold`,
-        icon: ArrowRightLeft,
-        iconColor: avgReconciliation >= 85 ? 'text-blue-600' : 'text-warning-600',
-        iconBg: avgReconciliation >= 85 ? 'bg-blue-50' : 'bg-warning-50',
+        detail: `${mockStores.filter(s => s.reconciliation_rate < 85).length} below 85%`,
         tooltip:
           'Average reconciliation rate across all stores. Stores below 85% are flagged as needing attention.',
       },
       {
-        label: 'Stores with Decisions',
+        label: 'Decisions',
         value: `${storesWithDecisions}/${total}`,
         detail: `${Math.round((storesWithDecisions / total) * 100)}% engagement`,
-        icon: ClipboardCheck,
-        iconColor: 'text-purple-600',
-        iconBg: 'bg-purple-50',
         tooltip:
-          'Stores where owners made business decisions (price changes, stock adjustments, inventory counts, or purchase orders) in the last 7 days. This is the strongest engagement signal.',
+          'Stores where owners made business decisions this week. This is the strongest engagement signal.',
+      },
+      {
+        label: 'Churn Risk',
+        value: `${churnRisk}`,
+        detail: '2wk+ below threshold',
+        valueColor: churnRisk > 0 ? 'text-error-600' : undefined,
+        tooltip:
+          'Stores below the reconciliation threshold for 2+ consecutive weeks. These are at risk of churning off the platform.',
       },
     ];
   }, []);
 
   return (
-    <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
-      {cards.map(card => {
-        const Icon = card.icon;
-        return (
-          <Card key={card.label} className="transition-shadow duration-200 hover:shadow-md">
-            <CardContent className="p-4">
-              <div className="flex flex-col gap-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-medium text-text-tertiary">{card.label}</span>
-                    <InfoTooltip content={card.tooltip} />
-                  </div>
-                  <div
-                    className={`flex size-7 items-center justify-center rounded-lg ${card.iconBg}`}
-                  >
-                    <Icon className={`size-3.5 ${card.iconColor}`} />
-                  </div>
-                </div>
-                <span className="text-xl font-bold tracking-tight text-text-primary">
-                  {card.value}
+    <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-7">
+      {cards.map(card => (
+        <Card key={card.label} className="transition-shadow duration-200 hover:shadow-md">
+          <CardContent className="p-4">
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium uppercase tracking-wide text-text-tertiary">
+                  {card.label}
                 </span>
-                <span className="text-xs text-text-tertiary">{card.detail}</span>
+                <InfoTooltip content={card.tooltip} />
               </div>
-            </CardContent>
-          </Card>
-        );
-      })}
+              <span
+                className={`text-xl font-bold tracking-tight ${card.valueColor ?? 'text-text-primary'}`}
+              >
+                {card.value}
+              </span>
+              <span className="text-xs text-text-tertiary">{card.detail}</span>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 }

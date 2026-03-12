@@ -1,21 +1,8 @@
 import { ColumnDef } from '@tanstack/react-table';
 import { Badge } from '@/components/ui/badge';
-import { InfoTooltip } from '@/components/ui/info-tooltip';
-import { CheckCircle2, XCircle } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
 import { TableColumnHeader } from '@/components/organisms/GenericTable/TableColumnHeader';
 import type { StoreOperationalStatus } from '@/services/types/metrics';
-
-function StatusIcon({ passing }: { passing: boolean }) {
-  return passing ? (
-    <div className="flex justify-center">
-      <CheckCircle2 className="size-4 text-success-500" />
-    </div>
-  ) : (
-    <div className="flex justify-center">
-      <XCircle className="size-4 text-error-500" />
-    </div>
-  );
-}
 
 function formatNaira(value: number): string {
   if (value >= 1_000_000) return `₦${(value / 1_000_000).toFixed(1)}M`;
@@ -23,13 +10,8 @@ function formatNaira(value: number): string {
   return `₦${value}`;
 }
 
-function HeaderWithInfo({ label, tooltip }: { label: string; tooltip: string }) {
-  return (
-    <div className="flex items-center gap-1 text-center">
-      <span>{label}</span>
-      <InfoTooltip content={tooltip} side="bottom" />
-    </div>
-  );
+function daysSince(dateStr: string): number {
+  return Math.floor((Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60 * 24));
 }
 
 export const columns: ColumnDef<StoreOperationalStatus, unknown>[] = [
@@ -63,6 +45,20 @@ export const columns: ColumnDef<StoreOperationalStatus, unknown>[] = [
     },
   },
   {
+    id: 'stage',
+    header: 'Stage',
+    cell: ({ row }) => {
+      const store = row.original;
+      // At Risk if not operational OR reconciliation below 85% for 2+ weeks
+      const isAtRisk = !store.is_fully_operational || store.reconciliation_rate < 85;
+      return (
+        <span className={`text-sm font-medium ${isAtRisk ? 'text-error-600' : 'text-success-600'}`}>
+          {isAtRisk ? 'At Risk' : 'Active'}
+        </span>
+      );
+    },
+  },
+  {
     accessorKey: 'gmv',
     header: ({ column }) => <TableColumnHeader column={column} title="GMV (7d)" />,
     cell: ({ row }) => (
@@ -72,62 +68,25 @@ export const columns: ColumnDef<StoreOperationalStatus, unknown>[] = [
     ),
   },
   {
-    accessorKey: 'has_sales',
-    header: () => (
-      <HeaderWithInfo
-        label="Sales"
-        tooltip="Has the store processed at least 1 transaction in the last 7 days?"
-      />
-    ),
-    cell: ({ row }) => <StatusIcon passing={row.getValue('has_sales') as boolean} />,
-    enableSorting: false,
-  },
-  {
-    accessorKey: 'has_inventory_events',
-    header: () => (
-      <HeaderWithInfo
-        label="Inventory"
-        tooltip="Has the store recorded at least 1 inventory event (stock-in, stock-out, adjustment, or transfer) in the last 7 days?"
-      />
-    ),
-    cell: ({ row }) => <StatusIcon passing={row.getValue('has_inventory_events') as boolean} />,
-    enableSorting: false,
-  },
-  {
-    accessorKey: 'has_closed_trading_day',
-    header: () => (
-      <HeaderWithInfo
-        label="Day Close"
-        tooltip="Has the store successfully closed at least 1 trading day in the last 7 days?"
-      />
-    ),
-    cell: ({ row }) => <StatusIcon passing={row.getValue('has_closed_trading_day') as boolean} />,
-    enableSorting: false,
-  },
-  {
-    accessorKey: 'has_zero_critical_failures',
-    header: () => (
-      <HeaderWithInfo
-        label="No Failures"
-        tooltip="Zero critical system failures in the last 7 days. A critical failure is unrecoverable data loss, app crash requiring manual restart, or unresolvable sync conflict."
-      />
-    ),
-    cell: ({ row }) => (
-      <StatusIcon passing={row.getValue('has_zero_critical_failures') as boolean} />
-    ),
-    enableSorting: false,
-  },
-  {
     accessorKey: 'reconciliation_rate',
     header: ({ column }) => <TableColumnHeader column={column} title="Reconciliation" />,
     cell: ({ row }) => {
       const rate = row.getValue('reconciliation_rate') as number;
       return (
-        <span
-          className={`text-sm font-medium ${rate >= 85 ? 'text-success-700' : 'text-warning-700'}`}
-        >
-          {rate}%
-        </span>
+        <div className="flex items-center gap-2">
+          <Progress
+            value={rate}
+            className="h-2 w-16"
+            style={
+              { '--progress-color': rate >= 85 ? '#16a34a' : '#f59e0b' } as React.CSSProperties
+            }
+          />
+          <span
+            className={`text-sm font-medium ${rate >= 85 ? 'text-success-700' : 'text-warning-700'}`}
+          >
+            {rate}%
+          </span>
+        </div>
       );
     },
   },
@@ -148,12 +107,23 @@ export const columns: ColumnDef<StoreOperationalStatus, unknown>[] = [
     },
   },
   {
+    id: 'days_onboard',
+    header: ({ column }) => <TableColumnHeader column={column} title="Days Onboard" />,
+    accessorFn: row => daysSince(row.created_at),
+    cell: ({ row }) => {
+      const days = daysSince(row.original.created_at);
+      return <span className="text-sm text-text-secondary">{days}d</span>;
+    },
+  },
+  {
     accessorKey: 'decision_actions_count',
     header: ({ column }) => <TableColumnHeader column={column} title="Decisions" />,
     cell: ({ row }) => {
       const count = row.getValue('decision_actions_count') as number;
       return (
-        <span className={`text-sm ${count > 0 ? 'text-text-primary' : 'text-text-quaternary'}`}>
+        <span
+          className={`text-sm ${count > 0 ? 'font-medium text-brand-600' : 'text-text-quaternary'}`}
+        >
           {count > 0 ? `${count} this week` : 'None'}
         </span>
       );
